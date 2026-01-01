@@ -32,7 +32,9 @@ class _FurnitureScreenState extends State<FurnitureScreen> {
         final Map<String, dynamic> responseData = json.decode(response.body);
         final List rawData = responseData['data'];
         setState(() {
-          furnitureList = rawData.map((item) => Furniture.fromJson(item)).toList();
+          furnitureList = rawData
+              .map((item) => Furniture.fromJson(item))
+              .toList();
           isLoading = false;
         });
       }
@@ -87,7 +89,9 @@ class _FurnitureScreenState extends State<FurnitureScreen> {
   }
 
   void _showSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   // --- UI DIALOG KONFIRMASI HAPUS ---
@@ -96,7 +100,9 @@ class _FurnitureScreenState extends State<FurnitureScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text("Konfirmasi"),
-        content: const Text("apakah anda yakin ingin menghapus produk ini?"), // Pesan sesuai instruksi
+        content: const Text(
+          "apakah anda yakin ingin menghapus produk ini?",
+        ), // Pesan sesuai instruksi
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -105,7 +111,7 @@ class _FurnitureScreenState extends State<FurnitureScreen> {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context); // Tutup dialog
-              deleteFurniture(id);    // Jalankan fungsi hapus
+              deleteFurniture(id); // Jalankan fungsi hapus
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             child: const Text("Iya", style: TextStyle(color: Colors.white)),
@@ -118,10 +124,18 @@ class _FurnitureScreenState extends State<FurnitureScreen> {
   // --- UI DIALOG FORM (ADD/EDIT) ---
   void _showFormDialog({Furniture? furniture}) {
     final isEdit = furniture != null;
-    final nameController = TextEditingController(text: isEdit ? furniture.name : "");
-    final descController = TextEditingController(text: isEdit ? furniture.description : "");
-    final priceController = TextEditingController(text: isEdit ? furniture.price.toString() : "");
-    final stockController = TextEditingController(text: isEdit ? furniture.stock.toString() : "");
+    final nameController = TextEditingController(
+      text: isEdit ? furniture.name : "",
+    );
+    final descController = TextEditingController(
+      text: isEdit ? furniture.description : "",
+    );
+    final priceController = TextEditingController(
+      text: isEdit ? furniture.price.toString() : "",
+    );
+    final stockController = TextEditingController(
+      text: isEdit ? furniture.stock.toString() : "",
+    );
 
     showDialog(
       context: context,
@@ -131,15 +145,32 @@ class _FurnitureScreenState extends State<FurnitureScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextField(controller: nameController, decoration: const InputDecoration(labelText: "Nama Produk")),
-              TextField(controller: descController, decoration: const InputDecoration(labelText: "Deskripsi")),
-              TextField(controller: priceController, decoration: const InputDecoration(labelText: "Harga"), keyboardType: TextInputType.number),
-              TextField(controller: stockController, decoration: const InputDecoration(labelText: "Stok"), keyboardType: TextInputType.number),
+              TextField(
+                controller: nameController,
+                decoration: const InputDecoration(labelText: "Nama Produk"),
+              ),
+              TextField(
+                controller: descController,
+                decoration: const InputDecoration(labelText: "Deskripsi"),
+              ),
+              TextField(
+                controller: priceController,
+                decoration: const InputDecoration(labelText: "Harga"),
+                keyboardType: TextInputType.number,
+              ),
+              TextField(
+                controller: stockController,
+                decoration: const InputDecoration(labelText: "Stok"),
+                keyboardType: TextInputType.number,
+              ),
             ],
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Batal")),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Batal"),
+          ),
           ElevatedButton(
             onPressed: () {
               final data = {
@@ -167,7 +198,10 @@ class _FurnitureScreenState extends State<FurnitureScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text("Furniture List", style: TextStyle(fontWeight: FontWeight.bold)), 
+        title: const Text(
+          "Furniture List",
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         backgroundColor: Colors.white,
         foregroundColor: kTextColor,
         elevation: 0,
@@ -185,23 +219,31 @@ class _FurnitureScreenState extends State<FurnitureScreen> {
                 final item = furnitureList[index];
                 return Card(
                   elevation: 2,
-                  margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  margin: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 5,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                   child: ListTile(
-                    title: Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+                    title: Text(
+                      item.name,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
                     subtitle: Text("Rp ${item.price} | Stok: ${item.stock}"),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         // Tombol Edit
                         IconButton(
-                          icon: const Icon(Icons.edit, color: Colors.blue), 
-                          onPressed: () => _showFormDialog(furniture: item)
+                          icon: const Icon(Icons.edit, color: Colors.blue),
+                          onPressed: () => _showFormDialog(furniture: item),
                         ),
                         // Tombol Hapus dengan Konfirmasi
                         IconButton(
-                          icon: const Icon(Icons.delete, color: Colors.red), 
-                          onPressed: () => _showDeleteConfirmation(item.id!)
+                          icon: const Icon(Icons.delete, color: Colors.red),
+                          onPressed: () => _showDeleteConfirmation(item.id!),
                         ),
                       ],
                     ),

@@ -12,10 +12,13 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  // Variabel untuk menampung data dari Database
   int furnitureCount = 0;
   int customerCount = 0;
+  List<dynamic> ordersList = []; 
   bool isLoading = true;
+
+  // Endpoint sesuai dengan api.php Anda (image_4796cd.png)
+  final String url = "http://localhost:8000/api/admin-orders"; 
 
   @override
   void initState() {
@@ -23,25 +26,32 @@ class _DashboardScreenState extends State<DashboardScreen> {
     fetchDashboardData();
   }
 
-  // Fungsi untuk mengambil data dari Laravel
   Future<void> fetchDashboardData() async {
-    // SESUAIKAN IP: Gunakan 10.0.2.2 untuk emulator atau IP Laptop untuk HP fisik
-    final String url = "http://127.0.0.1:8000/api/produks"; 
-
     try {
       final response = await http.get(Uri.parse(url));
 
       if (response.statusCode == 200) {
-        final List data = json.decode(response.body);
+        final Map<String, dynamic> responseData = json.decode(response.body);
+        
         setState(() {
-          furnitureCount = data.length; // Mengupdate angka sesuai jumlah baris di database
-          customerCount = 100; // Contoh statis, bisa buat API serupa untuk User
-          isLoading = false;
+          // BOLD: Gunakan .toInt() atau ?? 0 untuk mencegah null pointer
+          furnitureCount = responseData['summary']['total_furniture'] ?? 0;
+          customerCount = responseData['summary']['total_customer'] ?? 0;
+          ordersList = responseData['data'] ?? [];
+          isLoading = false; 
         });
+      } else {
+        throw Exception("Server Error");
       }
     } catch (e) {
-      print("Error fetching data: $e");
-      setState(() => isLoading = false);
+      debugPrint("Error Dashboard: $e");
+      // TETAP MATIKAN LOADING agar aplikasi tidak berputar terus jika terjadi error
+      if (mounted) {
+        setState(() => isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Gagal memuat data: $e")),
+        );
+      }
     }
   }
 
@@ -57,9 +67,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
         title: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Column(
+            const Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
+              children: [
                 Text('Good morning 👋', style: kTextStyleSubtitle),
                 Text('Admin123', style: kTextStyleTitle),
               ],
@@ -74,9 +84,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
       ),
       body: isLoading 
-          ? const Center(child: CircularProgressIndicator()) // Loading indicator
+          ? const Center(child: CircularProgressIndicator(color: kPrimaryColor))
           : RefreshIndicator(
-              onRefresh: fetchDashboardData, // Tarik layar ke bawah untuk refresh
+              onRefresh: fetchDashboardData,
               child: SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: const EdgeInsets.all(kDefaultPadding),
@@ -85,31 +95,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   children: [
                     Row(
                       children: [
-                        Expanded(
-                          child: StatCard(
-                            title: 'Furniture', 
-                            value: furnitureCount.toString(), // Data Dinamis
-                          ),
-                        ),
+                        Expanded(child: StatCard(title: 'Furniture', value: furnitureCount.toString())),
                         const SizedBox(width: kDefaultPadding),
-                        Expanded(
-                          child: StatCard(
-                            title: 'Customer', 
-                            value: customerCount.toString(), // Data Dinamis
-                          ),
-                        ),
+                        Expanded(child: StatCard(title: 'Customer', value: customerCount.toString())),
                       ],
                     ),
                     const SizedBox(height: kDefaultPadding * 1.5),
-                    const Text('Income', style: kTextStyleSubtitle),
-                    const SizedBox(height: 4),
-                    const Text(
-                      'Rp 000.000.000',
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: kTextColor),
-                    ),
-                    const SizedBox(height: kDefaultPadding * 1.5),
                     const Text('Orders', style: kTextStyleHeaderCard),
-                    const OrdersTable(),
+                    const SizedBox(height: 10),
+                    // Tabel Orders Dinamis
+                    OrdersTable(orders: ordersList),
                   ],
                 ),
               ),
@@ -118,7 +113,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 }
 
-// Widget StatCard tetap sama (Stateless)
 class StatCard extends StatelessWidget {
   final String title;
   final String value;
@@ -144,11 +138,53 @@ class StatCard extends StatelessWidget {
   }
 }
 
-// Widget OrdersTable tetap sama
 class OrdersTable extends StatelessWidget {
-  const OrdersTable({super.key});
+  final List<dynamic> orders;
+  const OrdersTable({super.key, required this.orders});
+
   @override
   Widget build(BuildContext context) {
-    return Container(/* ... isi tabel tetap sama seperti kode Anda ... */);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey.shade300),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: orders.isEmpty 
+          ? const Center(child: Padding(
+              padding: EdgeInsets.all(20.0),
+              child: Text("Tidak ada pesanan terbaru."),
+            ))
+          : Table(
+              columnWidths: const {
+                0: FlexColumnWidth(1), // ID
+                1: FlexColumnWidth(2), // Status
+                2: FlexColumnWidth(2), // Total
+              },
+              children: [
+                const TableRow(
+                  decoration: BoxDecoration(color: Color(0xFFF5F5F5)),
+                  children: [
+                    Padding(padding: EdgeInsets.all(8.0), child: Text('ID', style: TextStyle(fontWeight: FontWeight.bold))),
+                    Padding(padding: EdgeInsets.all(8.0), child: Text('Status', style: TextStyle(fontWeight: FontWeight.bold))),
+                    Padding(padding: EdgeInsets.all(8.0), child: Text('Total', style: TextStyle(fontWeight: FontWeight.bold))),
+                  ],
+                ),
+                ...orders.map((order) {
+                  return TableRow(
+                    children: [
+                      // Sesuai field database 'id' (image_478ba8.jpg)
+                      Padding(padding: const EdgeInsets.all(8.0), child: Text("#${order['id']}")),
+                      // Sesuai field database 'status'
+                      Padding(padding: const EdgeInsets.all(8.0), child: Text(order['status'] ?? '-')),
+                      // Sesuai field database 'total_harga'
+                      Padding(padding: const EdgeInsets.all(8.0), child: Text("Rp ${order['total_harga']}")),
+                    ],
+                  );
+                }).toList(),
+              ],
+            ),
+    );
   }
 }
